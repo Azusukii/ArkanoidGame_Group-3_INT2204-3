@@ -35,16 +35,20 @@ Highscore manager menu
 
 Level 1:
 
-<img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/23b7ea9e-0536-4e35-a179-98673326492d" />
+<img width="1065" height="788" alt="image" src="https://github.com/user-attachments/assets/7de140a4-5262-400c-be79-31183136b9de" />
+
 Level 2:
 
-<img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/d0a3fe4a-1fa7-4a87-b1b6-f5f2761e5a5f" />
+<img width="1057" height="789" alt="image" src="https://github.com/user-attachments/assets/98b3516a-3745-4eae-a9b4-c3e855675c46" />
+
 Level 3:
 
-<img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/9b837ea9-de5b-4148-88ba-7d0b8e5d3381" />
+<img width="1074" height="781" alt="image" src="https://github.com/user-attachments/assets/b8ebcc22-7eb2-4b7b-9ebb-fc86a3b82bde" />
+
 Level 4:
 
-<img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/3ad43e84-5b6f-4cbd-b580-f5fd1e22154a" />
+<img width="1073" height="793" alt="image" src="https://github.com/user-attachments/assets/b1d09b15-8960-48a3-a3df-08f94115837d" />
+
 
 Members: 
 @armordkay: Nguyễn Văn Vũ(24022493) - leader
