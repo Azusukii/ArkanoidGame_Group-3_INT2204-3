@@ -214,6 +214,9 @@ public class GameManager {
                 if (random.nextInt(100) < 15) {
                     spawnPowerUp(hitBrick.getCenterX(), hitBrick.getCenterY());
                 }
+
+                // Remove destroyed brick so it no longer renders or collides
+                bricks.remove(hitBrick);
             }
         }
     }

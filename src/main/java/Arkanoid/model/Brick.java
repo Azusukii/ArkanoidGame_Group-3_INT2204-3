@@ -12,6 +12,7 @@ public class Brick extends GameObject {
     private int hitsRemaining;
     private Color color;
     private boolean destroyed;
+    private boolean damaged; // show broken sprite for HARD after first hit
     
     public Brick(double x, double y, double width, double height, BrickType type, Color color) {
         super(x, y, width, height);
@@ -19,6 +20,7 @@ public class Brick extends GameObject {
         this.color = color;
         this.hitsRemaining = type.getHits();
         this.destroyed = false;
+    this.damaged = false;
     }
     
     /** Bricks are static; no-op update. */
@@ -36,29 +38,21 @@ public class Brick extends GameObject {
     @Override
     public void render(GraphicsContext gc) {
         if (destroyed) return;
-        
-        // Draw brick with gradient
+
+        // Default fallback if renderer image not used
         gc.setFill(color);
         gc.fillRoundRect(x + 1, y + 1, width - 2, height - 2, 5, 5);
-        
-        // Add highlight for 3D effect
+
+        // Highlight
         gc.setFill(Color.rgb(255, 255, 255, 0.3));
         gc.fillRoundRect(x + 1, y + 1, width - 2, height / 2, 5, 5);
-        
-        // Draw border
+
+        // Border
         gc.setStroke(Color.rgb(0, 0, 0, 0.5));
         gc.setLineWidth(2);
         gc.strokeRoundRect(x + 1, y + 1, width - 2, height - 2, 5, 5);
-        
-        // Show hits remaining for hard bricks
-        if (type == BrickType.HARD && hitsRemaining > 0) {
-            gc.setFill(Color.WHITE);
-            gc.setFont(javafx.scene.text.Font.font(12));
-            String text = String.valueOf(hitsRemaining);
-            gc.fillText(text, x + width / 2 - 4, y + height / 2 + 4);
-        }
-        
-        // Unbreakable brick indicator
+
+        // Unbreakable indicator
         if (type == BrickType.UNBREAKABLE) {
             gc.setStroke(Color.YELLOW);
             gc.setLineWidth(2);
@@ -82,8 +76,9 @@ public class Brick extends GameObject {
             return true;
         }
         
-        // Darken color for hard bricks
+        // Mark damaged after first hit for HARD so renderer can show broken sprite
         if (type == BrickType.HARD) {
+            damaged = true;
             color = color.darker();
         }
         
@@ -94,6 +89,9 @@ public class Brick extends GameObject {
     public boolean isDestroyed() {
         return destroyed;
     }
+
+    /** @return true if the brick is damaged but not destroyed (used for HARD). */
+    public boolean isDamaged() { return damaged; }
     
     /** @return the brick type controlling durability and score. */
     public BrickType getType() {

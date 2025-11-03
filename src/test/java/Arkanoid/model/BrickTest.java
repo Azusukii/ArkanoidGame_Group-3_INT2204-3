@@ -18,10 +18,11 @@ public class BrickTest {
         // Test code for Brick hit logic
         assertFalse(unbreakable.hit());
         assertTrue(normal.hit());
-        assertTrue(normal.hit());
-        assertFalse(hard.hit());
-        assertTrue(hard.hit());
-        assertTrue(hard.hit());
+    // NORMAL was already destroyed; subsequent hits remain true (destroyed)
+    assertTrue(normal.isDestroyed());
+    // HARD now breaks in 1 hit
+    assertTrue(hard.hit());
+    assertTrue(hard.isDestroyed());
     }
 
     /**

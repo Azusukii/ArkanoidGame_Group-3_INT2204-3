@@ -258,8 +258,19 @@ public class Renderer {
 
     private void renderGame(GameManager gameManager) {
         for (Brick brick : gameManager.getBricks()) {
+            if (brick.isDestroyed()) continue; // do not draw destroyed bricks
             String type = brick.getType().name();
-            Image img = brickImages.get(type);
+            Image img;
+            if (brick.getType() == BrickType.HARD && brick instanceof Brick) {
+                // Use broken sprite if HARD has been damaged
+                if (((Brick) brick).isDamaged()) {
+                    img = brickImages.get("BROKEN");
+                } else {
+                    img = brickImages.get("HARD");
+                }
+            } else {
+                img = brickImages.get(type);
+            }
             if (img != null) {
                 gc.drawImage(img, brick.getX(), brick.getY(),
                         brick.getWidth(), brick.getHeight());
