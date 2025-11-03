@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>C:/Users/tranb/OneDrive/Desktop/ArkanoidGame_Group-3_INT2204-3</OriginalElement>
+  <nodes>
+    <node x="647.5" y="2822.0">Arkanoid.model.Ball</node>
+    <node x="1494.5" y="7.0">Arkanoid.level.LevelLoader</node>
+    <node x="1483.5" y="-441.0">Arkanoid.model.RendererTest</node>
+    <node x="1380.0" y="-240.5">Arkanoid.audio.SoundInterface</node>
+    <node x="1089.0" y="-54.0">Arkanoid.level.LevelSelectionView</node>
+    <node x="1302.5" y="842.0">Arkanoid.manager.ScoreManager</node>
+    <node x="903.5" y="402.0">Arkanoid.util.InputHandler</node>
+    <node x="-225.5" y="3087.0">Arkanoid.model.MovingBrick</node>
+    <node x="1240.5" y="-478.0">Arkanoid.model.BrickType</node>
+    <node x="1416.5" y="1427.0">Arkanoid.audio.Effect</node>
+    <node x="242.0" y="1354.0">Arkanoid.model.MoveableObject</node>
+    <node x="982.0" y="3002.5">Arkanoid.level.Level</node>
+    <node x="1381.0" y="474.0">Arkanoid.audio.SoundAbstract</node>
+    <node x="68.0" y="2106.0">Arkanoid.model.PowerUps</node>
+    <node x="796.5" y="1782.0">Arkanoid.manager.GameManager</node>
+    <node x="721.0" y="7.0">Arkanoid.level.LevelInterface</node>
+    <node x="1137.5" y="-241.0">Arkanoid.view.SettingsView</node>
+    <node x="287.5" y="2978.0">Arkanoid.model.Paddle</node>
+    <node x="691.0" y="1282.0">Arkanoid.level.AbstractLevel</node>
+    <node x="1367.5" y="4163.0">Arkanoid.renderer.Renderer</node>
+    <node x="-102.0" y="4307.0">Arkanoid.model.MovingBrick.Axis</node>
+    <node x="1092.5" y="4126.0">Arkanoid.audio.AudioSetting</node>
+    <node x="859.0" y="3635.0">Arkanoid.model.PaddleTest</node>
+    <node x="1130.0" y="1439.5">Arkanoid.level.LevelSelectionView.LevelSelectionCallback</node>
+    <node x="968.0" y="-453.0">Arkanoid.model.PowerUpType</node>
+    <node x="437.0" y="2094.5">Arkanoid.level.LevelData</node>
+    <node x="-41.0" y="330.0">Arkanoid.model.GameObject</node>
+    <node x="870.0" y="-253.0">Arkanoid.model.BrickTest</node>
+    <node x="698.5" y="-501.0">Arkanoid.Main</node>
+    <node x="509.5" y="4295.0">Arkanoid.manager.CollisionManager</node>
+    <node x="419.5" y="3791.5">Arkanoid.util.Constants</node>
+    <node x="230.0" y="4126.0">Arkanoid.level.LevelManager</node>
+    <node x="1509.0" y="2251.5">Arkanoid.audio.Ambient</node>
+    <node x="825.0" y="915.0">Arkanoid.model.BallTest</node>
+    <node x="356.5" y="451.0">Arkanoid.level.LevelBehaviorTest</node>
+    <node x="557.5" y="-253.0">Arkanoid.model.GameState</node>
+    <node x="1217.0" y="3586.5">Arkanoid.level.LevelData.BrickData</node>
+    <node x="9.5" y="3562.0">Arkanoid.audio.SoundManager</node>
+    <node x="-235.5" y="1294.0">Arkanoid.model.Brick</node>
+    <node x="1607.5" y="1427.0">Arkanoid.audio.Music</node>
+    <node x="555.5" y="926.0">Arkanoid.view.GameView</node>
+    <node x="200.5" y="7.0">Arkanoid.model.PowerUpsTest</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="Arkanoid.level.LevelSelectionView.LevelSelectionCallback" target="Arkanoid.level.LevelSelectionView" relationship="INNER_CLASS">
+      <point x="0.0" y="-43.5" />
+      <point x="0.0" y="177.0" />
+    </edge>
+    <edge source="Arkanoid.model.MoveableObject" target="Arkanoid.model.GameObject" relationship="GENERALIZATION">
+      <point x="0.0" y="-129.0" />
+      <point x="445.0" y="1243.0" />
+      <point x="125.0" y="1243.0" />
+      <point x="0.0" y="213.0" />
+    </edge>
+    <edge source="Arkanoid.model.Ball" target="Arkanoid.model.MoveableObject" relationship="GENERALIZATION">
+      <point x="0.0" y="-321.0" />
+      <point x="765.0" y="2083.0" />
+      <point x="405.0" y="2083.0" />
+      <point x="405.0" y="1623.0" />
+      <point x="225.0" y="1623.0" />
+      <point x="225.0" y="1323.0" />
+      <point x="445.0" y="1323.0" />
+      <point x="0.0" y="-129.0" />
+    </edge>
+    <edge source="Arkanoid.audio.SoundAbstract" target="Arkanoid.audio.SoundInterface" relationship="REALIZATION">
+      <point x="0.0" y="-69.0" />
+      <point x="0.0" y="43.5" />
+    </edge>
+    <edge source="Arkanoid.model.Brick" target="Arkanoid.model.GameObject" relationship="GENERALIZATION">
+      <point x="0.0" y="-189.0" />
+      <point x="-35.0" y="1243.0" />
+      <point x="125.0" y="1243.0" />
+      <point x="0.0" y="213.0" />
+    </edge>
+    <edge source="Arkanoid.level.Level" target="Arkanoid.level.AbstractLevel" relationship="GENERALIZATION">
+      <point x="0.0" y="-140.5" />
+      <point x="1125.0" y="1763.0" />
+      <point x="805.0" y="1763.0" />
+      <point x="0.0" y="201.0" />
+    </edge>
+    <edge source="Arkanoid.model.Paddle" target="Arkanoid.model.MoveableObject" relationship="GENERALIZATION">
+      <point x="0.0" y="-165.0" />
+      <point x="405.0" y="1623.0" />
+      <point x="225.0" y="1623.0" />
+      <point x="225.0" y="1323.0" />
+      <point x="445.0" y="1323.0" />
+      <point x="0.0" y="-129.0" />
+    </edge>
+    <edge source="Arkanoid.model.MovingBrick" target="Arkanoid.model.Brick" relationship="GENERALIZATION">
+      <point x="0.0" y="-56.0" />
+      <point x="-15.0" y="2083.0" />
+      <point x="185.0" y="2083.0" />
+      <point x="185.0" y="1263.0" />
+      <point x="-35.0" y="1263.0" />
+      <point x="0.0" y="-189.0" />
+    </edge>
+    <edge source="Arkanoid.model.MovingBrick.Axis" target="Arkanoid.model.MovingBrick" relationship="INNER_CLASS">
+      <point x="0.0" y="-56.0" />
+      <point x="0.0" y="56.0" />
+    </edge>
+    <edge source="Arkanoid.level.LevelData.BrickData" target="Arkanoid.level.LevelData" relationship="INNER_CLASS">
+      <point x="0.0" y="-236.5" />
+      <point x="1345.0" y="3563.0" />
+      <point x="585.0" y="3563.0" />
+      <point x="0.0" y="188.5" />
+    </edge>
+    <edge source="Arkanoid.audio.Music" target="Arkanoid.audio.SoundAbstract" relationship="GENERALIZATION">
+      <point x="0.0" y="-56.0" />
+      <point x="1705.0" y="823.0" />
+      <point x="1485.0" y="823.0" />
+      <point x="1485.0" y="643.0" />
+      <point x="1465.0" y="643.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="Arkanoid.audio.Effect" target="Arkanoid.audio.SoundAbstract" relationship="GENERALIZATION">
+      <point x="0.0" y="-56.0" />
+      <point x="1485.0" y="643.0" />
+      <point x="1465.0" y="643.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="Arkanoid.model.PowerUps" target="Arkanoid.model.MoveableObject" relationship="GENERALIZATION">
+      <point x="0.0" y="-177.0" />
+      <point x="225.0" y="2083.0" />
+      <point x="405.0" y="2083.0" />
+      <point x="405.0" y="1623.0" />
+      <point x="225.0" y="1623.0" />
+      <point x="225.0" y="1323.0" />
+      <point x="445.0" y="1323.0" />
+      <point x="0.0" y="-129.0" />
+    </edge>
+    <edge source="Arkanoid.audio.Ambient" target="Arkanoid.audio.Music" relationship="GENERALIZATION">
+      <point x="0.0" y="-31.5" />
+      <point x="1585.0" y="1403.0" />
+      <point x="1705.0" y="1403.0" />
+      <point x="0.0" y="-56.0" />
+    </edge>
+    <edge source="Arkanoid.level.AbstractLevel" target="Arkanoid.level.LevelInterface" relationship="REALIZATION">
+      <point x="0.0" y="-201.0" />
+      <point x="0.0" y="116.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="0.4748817627096148" showDependencies="false" x="857.0875163105882" y="-81.41938431999995" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Constructors</Category>
+    <Category>Fields</Category>
+    <Category>Inner Classes</Category>
+    <Category>Methods</Category>
+    <Category>Properties</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
