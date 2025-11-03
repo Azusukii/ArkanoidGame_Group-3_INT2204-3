@@ -12,7 +12,11 @@ public abstract class SoundAbstract implements SoundInterface{
         String url;
         if (soundPath != null && soundPath.startsWith("/")) {
             var res = SoundAbstract.class.getResource(soundPath);
-            if (res == null) throw new RuntimeException("Resource not found: " + soundPath);
+            if (res == null) {
+                System.err.println("Resource not found: " + soundPath + " (audio will be disabled for this clip)");
+                clip = null;
+                return;
+            }
             url = res.toExternalForm();
         } else {
             url = new File(soundPath).toURI().toString();
@@ -20,7 +24,6 @@ public abstract class SoundAbstract implements SoundInterface{
         try {
             clip = new AudioClip(url);
             setVolume(volume);
-            System.out.println("Loaded sound: " + soundPath);
         } catch (MediaException ex) {
             System.err.println("Failed to load sound '" + soundPath + "': " + ex.getMessage());
             clip = null;

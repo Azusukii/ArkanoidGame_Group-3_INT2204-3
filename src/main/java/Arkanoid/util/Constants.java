@@ -10,14 +10,14 @@ public class Constants {
     public static final double EPSILON = 1e-6;
 
     // Window dimensions
-    public static final int WINDOW_WIDTH = 800;
+    public static final int WINDOW_WIDTH = 860;
     public static final int WINDOW_HEIGHT = 600;
 
     // Paddle
-    public static final int PADDLE_WIDTH = 120;
+    public static final int PADDLE_WIDTH = 200;
     public static final int PADDLE_HEIGHT = 15;
     public static final int PADDLE_Y = 550;
-    public static final double PADDLE_SPEED = 6.5;
+    public static final double PADDLE_SPEED = 12.5;
     public static final Color PADDLE_COLOR = Color.DODGERBLUE;
 
     // Ball
@@ -52,15 +52,14 @@ public class Constants {
     public static final int UNBREAKABLE_BRICK = 3;
 
     // Power-ups
-    public static final int POWERUP_SIZE = 20;
-    public static final double POWERUP_FALL_SPEED = 0.5;
-    public static final Color POWERUP_EXPAND_COLOR = Color.GREEN;
+    public static final int POWERUP_SIZE = 40; // x2 size for power-up sprites
+    public static final double POWERUP_FALL_SPEED = 1.5;
+    // Power-up palette (per spec)
+    public static final Color POWERUP_EXPAND_COLOR = Color.YELLOW;
     public static final Color POWERUP_SHRINK_COLOR = Color.RED;
-    public static final Color POWERUP_SPEED_UP_COLOR = Color.YELLOW;
-    public static final Color POWERUP_SPEED_DOWN_COLOR = Color.CYAN;
-    public static final Color POWERUP_EXTRA_LIFE_COLOR = Color.PINK;
-    public static final Color POWERUP_MULTI_BALL_COLOR = Color.ORANGE;
-    public static final double POWERUP_DURATION = 9000;
+    public static final Color POWERUP_SPEED_UP_COLOR = Color.PINK;
+    public static final Color POWERUP_MULTI_BALL_COLOR = Color.BLUE;
+    public static final double POWERUP_DURATION = 10000;
 
     // Game settings
     public static final int INITIAL_LIVES = 3;

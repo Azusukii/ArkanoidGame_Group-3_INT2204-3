@@ -36,7 +36,6 @@ public class Level extends AbstractLevel {
 
         // Backup initial state for later resets
         backupInitialState();
-        System.out.println("Initialized " + bricks.size() + " bricks");
     }
 
     @Override
@@ -124,7 +123,7 @@ public class Level extends AbstractLevel {
     }
 
     /**
-     * ✅ Returns the background image path for this level.
+     * Returns the background image path for this level.
      * @return path to background image (e.g., "/images/level/space.png") or null for default
      */
     public String getBackgroundImage() {

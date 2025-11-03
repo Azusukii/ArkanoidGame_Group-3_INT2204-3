@@ -37,9 +37,9 @@ public class ScoreManager {
     }
 
     public void reset() {
-        score = 0;
-        level = 1;
-        lives = 3;
+        this.score = 0;
+        this.level = 1;
+        this.lives = 3;
     }
 
     public boolean isGameOver() {

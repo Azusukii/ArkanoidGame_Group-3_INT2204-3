@@ -2,23 +2,27 @@ package Arkanoid;
 
 import Arkanoid.level.LevelSelectionView;
 import Arkanoid.manager.GameManager;
+import Arkanoid.manager.HighScoreManager;
 import Arkanoid.model.GameState;
 import Arkanoid.view.GameView;
+import Arkanoid.view.StartMenuView;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 /**
- * JavaFX application entry point. Wires together GameManager, GameView,
- * and LevelSelectionView, and drives the main animation loop.
- * FIXED: Memory leak prevention - proper resource management.
+ * JavaFX application entry point. Wires together manager, views, and main loop.
+ * Applies proper resource management between state transitions.
  */
 public class Main extends Application {
     private GameManager gameManager;
     private GameView gameView;
     private LevelSelectionView levelSelectionView;
+    private StartMenuView startMenuView;
     private AnimationTimer gameLoop;
     private Stage primaryStage;
+    private HighScoreManager highScoreManager;
+    private GameState lastState = null;
 
     @Override
     public void start(Stage primaryStage) {
@@ -26,6 +30,7 @@ public class Main extends Application {
 
         // Initialize game manager
         gameManager = new GameManager();
+        highScoreManager = new HighScoreManager();
 
         // Initialize game view
         gameView = new GameView(gameManager);
@@ -35,25 +40,29 @@ public class Main extends Application {
         levelSelectionView.setCallback(new LevelSelectionView.LevelSelectionCallback() {
             @Override
             public void onLevelSelected(int levelNumber) {
-                // Chọn level và bắt đầu game
                 gameManager.selectLevel(levelNumber);
                 showGameView();
             }
 
             @Override
             public void onBack() {
-                // Quay về menu
                 gameManager.setCurrentState(GameState.MENU);
-                showGameView();
+                showStartMenu();
             }
         });
 
-        // Set callback cho InputHandler để mở Level Selection (khi nhấn L hoặc ESC)
-        gameView.getInputHandler().setOnShowLevelSelection(this::showLevelSelection);
+        // ESC returns to Start Menu
+        gameView.getInputHandler().setOnShowStartMenu(this::showStartMenu);
+
+        // Start menu (mouse-friendly)
+        startMenuView = new StartMenuView(primaryStage);
+        startMenuView.setOnStart(this::showLevelSelection);
+        startMenuView.setOnSettings(startMenuView::showSettingsInline);
+        startMenuView.setOnHighscores(() -> startMenuView.showLeaderboardInline(highScoreManager.getTopScores()));
 
         // Set up stage
         primaryStage.setTitle("Arkanoid Game");
-        showGameView();
+        startMenuView.show();
         primaryStage.setResizable(false);
         primaryStage.show();
 
@@ -65,12 +74,11 @@ public class Main extends Application {
         primaryStage.setScene(gameView.getScene());
         primaryStage.setTitle("Arkanoid Game");
 
-        // Gán lại callback mỗi khi quay về game view (menu hoặc gameplay)
-        gameView.getInputHandler().setOnShowLevelSelection(this::showLevelSelection);
+        // Re-bind ESC -> Start Menu
+        gameView.getInputHandler().setOnShowStartMenu(this::showStartMenu);
     }
 
     private void showLevelSelection() {
-        // ⚠️ CRITICAL: Cleanup trước khi mở level selection
         gameManager.cleanup();
 
         // Enter MENU state and play title music when opening level selection
@@ -78,6 +86,14 @@ public class Main extends Application {
         levelSelectionView.refresh();
         levelSelectionView.show();
         primaryStage.setTitle("Arkanoid - Level Selection");
+    }
+
+    private void showStartMenu() {
+        // Cleanup game state and go to Start Menu view
+        gameManager.cleanup();
+        gameManager.setCurrentState(GameState.MENU);
+        startMenuView.show();
+        primaryStage.setTitle("Arkanoid - Menu");
     }
 
     private void startGameLoop() {
@@ -91,6 +107,13 @@ public class Main extends Application {
 
                 deltaTime = Math.min(deltaTime, 0.05);
 
+                // Detect state transitions for dialogs like GAME_OVER
+                GameState current = gameManager.getCurrentState();
+                if (current != lastState) {
+                    onStateChanged(current);
+                    lastState = current;
+                }
+
                 // ⚠️ CRITICAL: Chỉ update khi ở GameView VÀ đang PLAYING
                 if (primaryStage.getScene() == gameView.getScene()) {
                     gameManager.update(deltaTime);
@@ -102,10 +125,37 @@ public class Main extends Application {
         gameLoop.start();
     }
 
+    private void onStateChanged(GameState state) {
+        if (state == GameState.MENU) {
+            // Always force switch to StartMenu scene when entering MENU
+            javafx.application.Platform.runLater(this::showStartMenu);
+        } else if (state == GameState.GAME_OVER) {
+            javafx.application.Platform.runLater(() -> {
+                int finalScore = (gameManager != null && gameManager.getScoreManager() != null)
+                        ? gameManager.getScoreManager().getScore() : 0;
+
+                if (gameView != null) {
+                    gameView.showGameOverNamePrompt(finalScore, name -> {
+                        if (highScoreManager != null) {
+                            highScoreManager.addScore(name, finalScore);
+                        }
+                        if (startMenuView != null) {
+                            startMenuView.show();
+                            startMenuView.showLeaderboardInline(highScoreManager.getTopScores());
+                        }
+                    }, () -> {
+                        if (startMenuView != null) {
+                            startMenuView.show();
+                            startMenuView.showLeaderboardInline(highScoreManager.getTopScores());
+                        }
+                    });
+                }
+            });
+        }
+    }
+
     @Override
     public void stop() {
-        System.out.println("🛑 Application stopping...");
-
         if (gameLoop != null) {
             gameLoop.stop();
         }
@@ -114,7 +164,6 @@ public class Main extends Application {
             gameManager.shutdown();
         }
 
-        System.out.println("✅ Application stopped cleanly");
     }
 
     public static void main(String[] args) {

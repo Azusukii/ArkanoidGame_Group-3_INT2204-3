@@ -6,12 +6,12 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 /**
- * Centralizes keyboard input handling and routes actions by current GameState.
- * Exposes a callback to open the Level Selection screen when appropriate.
+ * Centralizes keyboard input handling and routes actions by current {@link GameState}.
+ * Exposes a callback for showing the Start Menu.
  */
 public class InputHandler {
     private final GameManager gameManager;
-    private Runnable onShowLevelSelection; // Callback to open level selection UI
+    private Runnable onShowStartMenu; // Callback to show Start Menu UI
 
     public InputHandler(GameManager gameManager) {
         this.gameManager = gameManager;
@@ -36,35 +36,17 @@ public class InputHandler {
         }
     }
 
-    // ================= MENU =================
+    // Xử lý phím trong trạng thái MENU
     private void handleMenuInput(KeyCode code) {
         switch (code) {
-            case SPACE -> gameManager.startGame();
-            case L -> {
-                // Always allow opening Level Selection in menu
-                if (onShowLevelSelection != null) {
-                    System.out.println("Opening Level Selection...");
-                    onShowLevelSelection.run();
-                } else {
-                    System.out.println("onShowLevelSelection callback is null!");
-                }
-            }
-            case S -> {
-                // Open settings via menu key
-                Arkanoid.view.SettingsView.showSettings();
-            }
-            case ESCAPE -> {
-                // Exit game from menu with ESC
-                System.out.println("Exiting game...");
-                System.exit(0);
-            }
+            case ESCAPE -> { System.exit(0); }
             default -> {
                 // ignore other keys
             }
         }
     }
 
-    // ================= PLAYING =================
+    // Xử lý phím trong trạng thái PLAYING
     private void handlePlayingInput(KeyCode code, boolean pressed) {
         switch (code) {
             case LEFT, A -> gameManager.getPaddle().setMovingLeft(pressed);
@@ -77,13 +59,9 @@ public class InputHandler {
             }
             case ESCAPE -> {
                 if (pressed) {
-                    // ESC: return to main menu (and open Level Selection)
-                    System.out.println("Returning to MENU from PLAYING...");
+                    // ESC: return to Start Menu
                     gameManager.setCurrentState(GameState.MENU);
-                    if (onShowLevelSelection != null) {
-                        System.out.println("Opening Level Selection...");
-                        onShowLevelSelection.run();
-                    }
+                    if (onShowStartMenu != null) onShowStartMenu.run();
                 }
             }
             default -> {
@@ -92,18 +70,14 @@ public class InputHandler {
         }
     }
 
-    // ================= PAUSED =================
+    // Xử lý phím trong trạng thái PAUSED
     private void handlePausedInput(KeyCode code) {
         switch (code) {
             case P -> gameManager.pauseGame(); // resume
             case ESCAPE -> {
-                // ESC from paused -> return to menu
-                System.out.println("Back to MENU from PAUSE");
+                // ESC from paused -> return to Start Menu
                 gameManager.setCurrentState(GameState.MENU);
-                if (onShowLevelSelection != null) {
-                    System.out.println("Opening Level Selection from PAUSE...");
-                    onShowLevelSelection.run();
-                }
+                if (onShowStartMenu != null) onShowStartMenu.run();
             }
             default -> {
                 // ignore other keys
@@ -111,17 +85,13 @@ public class InputHandler {
         }
     }
 
-    // ================= GAME OVER =================
+    // Xử lý phím trong trạng thái GAME OVER
     private void handleGameOverInput(KeyCode code) {
         switch (code) {
             case SPACE -> gameManager.startGame();
             case ESCAPE -> {
-                System.out.println("Back to MENU from GAME OVER");
                 gameManager.setCurrentState(GameState.MENU);
-                if (onShowLevelSelection != null) {
-                    System.out.println("Opening Level Selection from GAME OVER...");
-                    onShowLevelSelection.run();
-                }
+                if (onShowStartMenu != null) onShowStartMenu.run();
             }
             default -> {
                 // ignore other keys
@@ -129,17 +99,13 @@ public class InputHandler {
         }
     }
 
-    // ================= LEVEL COMPLETE =================
+    // Xử lý phím trong trạng thái LEVEL COMPLETE
     private void handleLevelCompleteInput(KeyCode code) {
         switch (code) {
             case SPACE -> gameManager.nextLevel();
             case ESCAPE -> {
-                System.out.println("Back to MENU from LEVEL COMPLETE");
                 gameManager.setCurrentState(GameState.MENU);
-                if (onShowLevelSelection != null) {
-                    System.out.println("Opening Level Selection from LEVEL COMPLETE...");
-                    onShowLevelSelection.run();
-                }
+                if (onShowStartMenu != null) onShowStartMenu.run();
             }
             default -> {
                 // ignore other keys
@@ -147,8 +113,8 @@ public class InputHandler {
         }
     }
 
-    // ================= Callback setter =================
-    public void setOnShowLevelSelection(Runnable callback) {
-        this.onShowLevelSelection = callback;
+    /** Sets callback to show Start Menu when requested by input. */
+    public void setOnShowStartMenu(Runnable callback) {
+        this.onShowStartMenu = callback;
     }
 }

@@ -24,6 +24,7 @@ public class LevelLoader {
      * @param levelNumber 1-based level index (level1.json, level2.json, ...)
      * @return parsed {@link LevelData} or null on error/missing file
      */
+    // Tải dữ liệu level theo số thứ tự từ resources hoặc fallback filesystem
     public static LevelData loadLevel(int levelNumber) {
     String filename = "/levels/level" + levelNumber + ".json"; // in resources
 
@@ -32,7 +33,6 @@ public class LevelLoader {
                 // Load from classpath (resources)
                 try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                     LevelData data = gson.fromJson(reader, LevelData.class);
-                    System.out.println("Loaded level " + levelNumber + " from resources: " + data.getName());
                     return data;
                 }
             } else {
@@ -41,7 +41,6 @@ public class LevelLoader {
                 if (Files.exists(Paths.get(fallback))) {
                     String json = new String(Files.readAllBytes(Paths.get(fallback)), StandardCharsets.UTF_8);
                     LevelData data = gson.fromJson(json, LevelData.class);
-                    System.out.println("Loaded level " + levelNumber + " from filesystem: " + data.getName());
                     return data;
                 } else {
                     System.err.println("Missing level file: " + fallback);
@@ -58,6 +57,7 @@ public class LevelLoader {
     /**
      * Loads levels 1..maxLevel, returning an array (entries may be null if missing).
      */
+    // Tải nhiều level 1..maxLevel (có thể có phần tử null nếu thiếu)
     public static LevelData[] loadAllLevels(int maxLevel) {
         LevelData[] levels = new LevelData[maxLevel];
         for (int i = 1; i <= maxLevel; i++) {
@@ -69,6 +69,7 @@ public class LevelLoader {
     /**
      * Returns true if a level JSON exists either in classpath or filesystem fallback.
      */
+    // Kiểm tra level có tồn tại (resources hoặc filesystem)
     public static boolean levelExists(int levelNumber) {
         String pathInResources = "/levels/level" + levelNumber + ".json";
         if (LevelLoader.class.getResource(pathInResources) != null)
@@ -80,6 +81,7 @@ public class LevelLoader {
     /**
      * Counts sequential level files starting from 1 up to the first gap or maxScan.
      */
+    // Đếm số lượng level liên tiếp từ 1 đến khi gặp thiếu hoặc đạt maxScan
     public static int countAvailableLevels(int maxScan) {
         int count = 0;
         for (int i = 1; i <= maxScan; i++) {
@@ -93,6 +95,7 @@ public class LevelLoader {
      * Saves the given level configuration to the filesystem fallback directory.
      * @return true on success, false on I/O error
      */
+    // Lưu dữ liệu level ra thư mục fallback để chỉnh sửa/ghi file
     public static boolean saveLevel(LevelData levelData) {
     String filename = LEVELS_PATH + "level" + levelData.getLevelNumber() + ".json";
 
@@ -105,7 +108,6 @@ public class LevelLoader {
                 gson.toJson(levelData, writer);
             }
 
-            System.out.println("Saved level " + levelData.getLevelNumber() + " -> " + filename);
             return true;
         } catch (IOException e) {
             System.err.println("Error saving level: " + e.getMessage());
@@ -116,6 +118,7 @@ public class LevelLoader {
     /**
      * Creates a simple grid-based sample level for debugging or exporting.
      */
+    // Tạo level mẫu dạng lưới dùng cho debug hoặc export
     public static LevelData createSampleLevel(int levelNumber, String name) {
         LevelData levelData = new LevelData();
         levelData.setLevelNumber(levelNumber);
@@ -137,6 +140,7 @@ public class LevelLoader {
     /**
      * Picks a color by row index for sample level creation.
      */
+    // Chọn màu theo hàng khi tạo level mẫu
     private static String getColorForRow(int row) {
         String[] colors = {
                 "#FF0000", // Red

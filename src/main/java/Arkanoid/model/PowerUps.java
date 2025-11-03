@@ -13,6 +13,8 @@ public class PowerUps extends MoveableObject {
     private PowerUpType type;
     private boolean collected;
     private double timeleft;
+    // Cache images per power-up type
+    private static java.util.Map<PowerUpType, javafx.scene.image.Image> IMAGE_CACHE;
     public PowerUps(double x, double y, PowerUpType type) {
         super(x, y, Constants.POWERUP_SIZE, Constants.POWERUP_SIZE, Constants.POWERUP_FALL_SPEED);
         this.type = type;
@@ -40,20 +42,53 @@ public class PowerUps extends MoveableObject {
     public void render(GraphicsContext gc) {
         if (collected) return;
 
-        // Set color based on type
-        gc.setFill(getColor());
-        gc.fillOval(x, y, width, height);
+        // Try draw sprite image; fallback to colored circle + letter
+        javafx.scene.image.Image img = getTypeImage(type);
+        if (img != null) {
+            gc.drawImage(img, x, y, width, height);
+        } else {
+            // Set color based on type
+            gc.setFill(getColor());
+            gc.fillOval(x, y, width, height);
 
-        // Add border
-        gc.setStroke(Color.WHITE);
-        gc.setLineWidth(2);
-        gc.strokeOval(x, y, width, height);
+            // Add border
+            gc.setStroke(Color.WHITE);
+            gc.setLineWidth(2);
+            gc.strokeOval(x, y, width, height);
 
-        // Draw icon/letter
-        gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Arial", 12));
-        String letter = getIconLetter();
-        gc.fillText(letter, x + width / 2 - 4, y + height / 2 + 4);
+            // Draw icon/letter
+            gc.setFill(Color.WHITE);
+            gc.setFont(Font.font("Arial", 12));
+            String letter = getIconLetter();
+            gc.fillText(letter, x + width / 2 - 4, y + height / 2 + 4);
+        }
+    }
+
+    private javafx.scene.image.Image getTypeImage(PowerUpType t) {
+        if (t == null) return null;
+        if (IMAGE_CACHE == null) IMAGE_CACHE = new java.util.EnumMap<>(PowerUpType.class);
+        javafx.scene.image.Image cached = IMAGE_CACHE.get(t);
+        if (cached != null) return cached;
+
+        String fileName = switch (t) {
+            case BULLET -> "BULLET.png";
+            case MULTI_BALL -> "MULTI_BALL.png";
+            case EXPAND_PADDLE -> "EXPAND_PADDLE.png";
+            case SHRINK_PADDLE -> "SHRINK_PADDLE.png";
+            case SPEED_UP_BALL -> "SPEED_UP_BALL.png";
+        };
+        String path = "/images/powerup/" + fileName;
+        try {
+            var stream = PowerUps.class.getResourceAsStream(path);
+            if (stream == null) return null;
+            // Let drawImage scale to our width/height; load at natural size
+            javafx.scene.image.Image img = new javafx.scene.image.Image(stream);
+            stream.close();
+            IMAGE_CACHE.put(t, img);
+            return img;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private Color getColor() {
@@ -64,12 +99,10 @@ public class PowerUps extends MoveableObject {
                 return Constants.POWERUP_SHRINK_COLOR;
             case SPEED_UP_BALL:
                 return Constants.POWERUP_SPEED_UP_COLOR;
-            case SPEED_DOWN_BALL:
-                return Constants.POWERUP_SPEED_DOWN_COLOR;
-            case EXTRA_LIFE:
-                return Constants.POWERUP_EXTRA_LIFE_COLOR;
             case MULTI_BALL:
                 return Constants.POWERUP_MULTI_BALL_COLOR;
+            case BULLET:
+                return Color.PURPLE;
             default:
                 return Color.WHITE;
         }
@@ -83,12 +116,10 @@ public class PowerUps extends MoveableObject {
                 return "S";
             case SPEED_UP_BALL:
                 return "+";
-            case SPEED_DOWN_BALL:
-                return "-";
-            case EXTRA_LIFE:
-                return "L";
             case MULTI_BALL:
                 return "M";
+            case BULLET:
+                return "B";
             default:
                 return "?";
         }

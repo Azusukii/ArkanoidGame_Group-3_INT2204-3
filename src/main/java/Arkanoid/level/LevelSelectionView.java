@@ -28,7 +28,6 @@ public class LevelSelectionView {
     private Label titleLabel;
     private Button backButton;
 
-    // ✅ Giữ Scene để có thể quay lại dễ dàng
     private Scene scene;
 
     /** Callback interface for level selection UI actions. */
@@ -77,15 +76,15 @@ public class LevelSelectionView {
 
         mainContainer.getChildren().addAll(titleLabel, levelGrid, backButton);
 
-    // Create scene on init
+        // Create scene on init
         scene = new Scene(mainContainer, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 
-    // Handle ESC to go back to menu
+        // Handle ESC to go back to menu
         scene.setOnKeyPressed(e -> {
             switch (e.getCode()) {
                 case ESCAPE:
                     if (callback != null) {
-            callback.onBack();
+                        callback.onBack();
                     }
                     break;
                 default:
@@ -99,7 +98,7 @@ public class LevelSelectionView {
         levelGrid.getChildren().clear();
 
         int totalLevels = levelManager.getTotalLevels();
-    int cols = 5; // 5 levels per row
+        int cols = 5; // 5 levels per row
 
         for (int i = 1; i <= totalLevels; i++) {
             Button levelButton = createLevelButton(i);
@@ -128,7 +127,7 @@ public class LevelSelectionView {
                 styleButton(button, "#2ecc71");
             }
         } else {
-            button.setText("🔒");
+            button.setText("LOCKED");
             styleButton(button, "#7f8c8d");
             button.setDisable(true);
         }

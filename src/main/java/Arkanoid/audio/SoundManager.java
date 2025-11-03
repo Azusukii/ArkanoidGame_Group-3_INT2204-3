@@ -19,6 +19,9 @@ public class SoundManager {
     // Alternating background players
     private MediaPlayer bgPlayer1;
     private MediaPlayer bgPlayer2;
+    // Single timer for ducking to avoid spawning many Timer threads
+    private java.util.Timer duckTimer;
+    private java.util.TimerTask duckTask;
 
     private SoundManager() { }
 
@@ -190,13 +193,35 @@ public class SoundManager {
         float priorAmb = ambientVolume;
         float duckedBg = priorBg * 0.6f;
         float duckedAmb = priorAmb * 0.7f;
+
         setBackgroundVolume(duckedBg);
         setVolume("ambient_bg", duckedAmb);
-        new java.util.Timer(true).schedule(new java.util.TimerTask() {
+
+        // Initialize single daemon timer lazily
+        if (duckTimer == null) {
+            duckTimer = new java.util.Timer(true);
+        }
+
+        // Cancel any pending restore task to avoid piling up
+        if (duckTask != null) {
+            try { duckTask.cancel(); } catch (Exception ignored) {}
+            duckTask = null;
+        }
+
+        duckTask = new java.util.TimerTask() {
             @Override public void run() {
                 setBackgroundVolume(priorBg);
                 setVolume("ambient_bg", priorAmb);
+                // Clear reference so GC can collect the task
+                duckTask = null;
             }
-        }, ms);
+        };
+        try {
+            duckTimer.schedule(duckTask, ms);
+        } catch (IllegalStateException ignored) {
+            // Timer may have been cancelled; recreate and reschedule once
+            duckTimer = new java.util.Timer(true);
+            duckTimer.schedule(duckTask, ms);
+        }
     }
 }

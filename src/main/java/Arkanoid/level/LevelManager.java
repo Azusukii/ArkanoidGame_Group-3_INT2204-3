@@ -23,6 +23,7 @@ public class LevelManager {
     /**
      * Loads up to maxLevels from LevelLoader and initializes each level.
      */
+    // Tải danh sách level từ dữ liệu (resources hoặc filesystem)
     public void loadLevels(int maxLevels) {
         levels.clear();
         this.totalLevels = maxLevels;
@@ -36,18 +37,16 @@ public class LevelManager {
                 levels.add(level);
             } else {
                 // If loading fails, create a default sample level
-                System.out.println("Creating default level " + i);
                 LevelData defaultData = LevelLoader.createSampleLevel(i, "Level " + i);
                 Level level = new Level(defaultData);
                 level.initialize();
                 levels.add(level);
             }
         }
-
-        System.out.println("Loaded " + levels.size() + " levels");
     }
 
     /** Returns the currently selected Level or null if none. */
+    // Lấy level hiện tại (theo chỉ số đang chọn)
     public Level getCurrentLevel() {
         if (levels.isEmpty()) return null;
         return levels.get(currentLevelIndex);
@@ -56,6 +55,7 @@ public class LevelManager {
     /** Advances to next level if available.
      * @return true if moved to next level
      */
+    // Chuyển sang level tiếp theo nếu còn
     public boolean nextLevel() {
         if (currentLevelIndex < levels.size() - 1) {
             currentLevelIndex++;
@@ -73,6 +73,7 @@ public class LevelManager {
     /** Moves back to previous level if possible.
      * @return true if moved to previous level
      */
+    // Quay về level trước nếu có
     public boolean previousLevel() {
         if (currentLevelIndex > 0) {
             currentLevelIndex--;
@@ -85,6 +86,7 @@ public class LevelManager {
      * @param levelNumber 1-based index
      * @return true if selection succeeded
      */
+    // Chọn level theo số (1-based) nếu hợp lệ và được mở khóa
     public boolean selectLevel(int levelNumber) {
         int index = levelNumber - 1;
 
@@ -96,6 +98,7 @@ public class LevelManager {
     }
 
     /** Re-initializes the current level to its initial state. */
+    // Reset lại level hiện tại về trạng thái ban đầu
     public void resetCurrentLevel() {
         if (getCurrentLevel() != null) {
             getCurrentLevel().reset();
@@ -103,6 +106,7 @@ public class LevelManager {
     }
 
     /** Resets progression to level 1 and resets all levels. */
+    // Bắt đầu lại từ level 1 và reset tất cả level
     public void restartGame() {
         currentLevelIndex = 0;
         for (Level level : levels) {

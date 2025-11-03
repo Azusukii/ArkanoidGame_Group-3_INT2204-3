@@ -15,10 +15,7 @@ import java.util.List;
 public class CollisionManager {
     private static final double EPSILON = 0.1; // small offset to avoid re-colliding next frame
 
-    /**
-     * Resolves ball/paddle collision: bounce upward, adjust outgoing angle based on hit position,
-     * and place the ball just above the paddle to prevent sticking.
-     */
+    // Xử lý va chạm bóng - paddle: nảy lên, chỉnh góc theo vị trí va chạm, đặt bóng ngay trên paddle
     public void checkBallPaddleCollision(Ball ball, Paddle paddle) {
         if (ball.intersects(paddle) && ball.getVelocityY() > 0) {
             ball.reverseY();
@@ -38,11 +35,7 @@ public class CollisionManager {
         }
     }
 
-    /**
-     * Resolves the first brick collision encountered this tick using AABB overlap.
-     * Chooses the axis with smaller penetration to resolve and flips the corresponding velocity.
-     * Returns the brick hit so callers can apply damage/score logic.
-     */
+    // Xử lý va chạm bóng - gạch bằng AABB; trả về gạch trúng để áp dụng điểm/sát thương
     public Brick checkBallBrickCollision(Ball ball, List<Brick> bricks) {
         for (Brick brick : bricks) {
             if (!brick.isDestroyed() && ball.intersects(brick)) {
@@ -92,6 +85,7 @@ public class CollisionManager {
         return null;
     }
 
+    // Kiểm tra paddle có nhặt Power-up nào trong danh sách không
     public PowerUps checkPaddlePowerUpCollision(Paddle paddle, List<PowerUps> powerUps) {
         for (PowerUps powerUp : powerUps) {
             if (!powerUp.isCollected() && paddle.intersects(powerUp)) {

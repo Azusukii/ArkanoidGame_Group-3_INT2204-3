@@ -13,8 +13,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Central coordinator for game state, entities and level progression.
- * FIXED: Proper thread management, no memory leaks, cancellable tasks.
+ * Coordinates game state, entities, level progression, and timed events.
+ * Ensures proper thread management and cleanup between states.
  */
 public class GameManager {
     private GameState currentState;
@@ -22,6 +22,7 @@ public class GameManager {
     private List<Ball> balls;
     private List<Brick> bricks;
     private List<PowerUps> powerUps;
+    private List<Bullet> bullets;
     private CollisionManager collisionManager;
     private ScoreManager scoreManager;
     private Random random;
@@ -32,11 +33,14 @@ public class GameManager {
 
     // PowerUp timing
     private final Map<PowerUpType, Double> activePowerUps;
+    // Bullet spawning timing
+    private double bulletSpawnAccumulator = 0;
+    private static final double BULLET_SPAWN_INTERVAL = 0.6; // seconds (slower fire rate)
 
-    // ✅ Thread scheduler (single instance, reused)
+    // Thread scheduler (single instance, reused)
     private final ScheduledExecutorService scheduler;
 
-    // ✅ Track scheduled task để có thể cancel
+    // Track scheduled task for later cancellation
     private ScheduledFuture<?> stageStartTask;
 
     public GameManager() {
@@ -46,10 +50,10 @@ public class GameManager {
         this.random = new Random();
         this.activePowerUps = new HashMap<>();
 
-        // ✅ Initialize scheduler once
+        // Initialize scheduler once
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "GameManager-Scheduler");
-            t.setDaemon(true); // Daemon thread tự động dừng khi app tắt
+            t.setDaemon(true);
             return t;
         });
 
@@ -70,6 +74,7 @@ public class GameManager {
         balls.add(new Ball(paddle));
         bricks = new ArrayList<>();
         powerUps = new ArrayList<>();
+        bullets = new ArrayList<>();
 
         loadCurrentLevel();
     }
@@ -78,13 +83,8 @@ public class GameManager {
         currentLevel = levelManager.getCurrentLevel();
 
         if (currentLevel != null) {
-            System.out.println("Loading level: " + currentLevel.getLevelName() +
-                    " (Level " + currentLevel.getLevelNumber() + ")");
-
             bricks.clear();
             bricks.addAll(currentLevel.getBricks());
-
-            System.out.println("Loaded " + bricks.size() + " bricks from level data");
 
             try {
                 double levelBallSpeed = currentLevel.getBallSpeed();
@@ -100,14 +100,7 @@ public class GameManager {
             } catch (Exception ignored) {
             }
 
-            // Debug
-            for (int i = 0; i < Math.min(3, bricks.size()); i++) {
-                Brick b = bricks.get(i);
-                System.out.println("   Brick " + i + ": type=" + b.getType() +
-                        ", pos=(" + b.getX() + "," + b.getY() + ")");
-            }
         } else {
-            System.out.println("Current level is NULL! Using legacy level generation");
             createLegacyLevel();
         }
     }
@@ -146,12 +139,14 @@ public class GameManager {
     public void update(double deltaTime) {
         if (currentState != GameState.PLAYING) return;
 
+        // Cập nhật paddle theo thời gian (điều khiển trái/phải)
         paddle.update(deltaTime);
 
         for (Brick brick : bricks) {
             brick.update(deltaTime);
         }
 
+        // Logic xử lý va chạm vật lý giữa bóng, gạch, tường, paddle
         Iterator<Ball> ballIterator = balls.iterator();
         while (ballIterator.hasNext()) {
             Ball ball = ballIterator.next();
@@ -163,6 +158,8 @@ public class GameManager {
                     scoreManager.loseLife();
                     if (scoreManager.isGameOver()) {
                         currentState = GameState.GAME_OVER;
+                        // Ensure no delayed background start runs after GAME OVER
+                        cancelStageStartTask();
                         SoundManager sm = SoundManager.getInstance();
                         sm.stopAll();
                         sm.playSound("music_gameover");
@@ -175,6 +172,7 @@ public class GameManager {
             }
         }
 
+        // Rơi và nhặt Power-up (va chạm với paddle)
         Iterator<PowerUps> powerUpIterator = powerUps.iterator();
         while (powerUpIterator.hasNext()) {
             PowerUps powerUp = powerUpIterator.next();
@@ -193,13 +191,19 @@ public class GameManager {
             }
         }
 
+        // Thời gian hiệu lực của Power-up (tự hủy khi hết hạn)
         updateActivePowerUps();
+
+        // Update bullets and handle collisions
+        // Đạn bắn ra khi Power-up BULLET đang hoạt động
+        updateBullets(deltaTime);
 
         if (isLevelComplete()) {
             currentState = GameState.LEVEL_COMPLETE;
         }
     }
 
+    // Kiểm tra và xử lý va chạm giữa bóng với paddle và gạch
     private void checkCollisions(Ball ball) {
         collisionManager.checkBallPaddleCollision(ball, paddle);
 
@@ -211,24 +215,36 @@ public class GameManager {
                 SoundManager.getInstance().playSound("effect_brick");
                 SoundManager.getInstance().playSound("effect_score");
 
-                if (random.nextInt(100) < 15) {
+                if (random.nextInt(100) < 40) {
                     spawnPowerUp(hitBrick.getCenterX(), hitBrick.getCenterY());
                 }
 
-                // Remove destroyed brick so it no longer renders or collides
                 bricks.remove(hitBrick);
             }
         }
     }
 
+    // Tạo Power-up với tỉ lệ xuất hiện có trọng số
     private void spawnPowerUp(double x, double y) {
-        PowerUpType[] types = PowerUpType.values();
-        PowerUpType type = types[random.nextInt(types.length)];
+        int roll = random.nextInt(100); // 0..99
+        PowerUpType type;
+        if (roll < 30) {
+            type = PowerUpType.BULLET; // 0-29 (30%)
+        } else if (roll < 60) {
+            type = PowerUpType.MULTI_BALL; // 30-59 (30%)
+        } else if (roll < 75) {
+            type = PowerUpType.EXPAND_PADDLE; // 60-74 (15%)
+        } else if (roll < 90) {
+            type = PowerUpType.SHRINK_PADDLE; // 75-89 (15%)
+        } else {
+            type = PowerUpType.SPEED_UP_BALL; // 90-99 (10%)
+        }
         powerUps.add(new PowerUps(x, y, type));
     }
 
+    // Kích hoạt hiệu ứng Power-up và đặt thời gian hết hạn
     private void applyPowerUp(PowerUpType type) {
-        double now = System.currentTimeMillis(); // ✅ Đổi thành double
+        double now = System.currentTimeMillis();
 
         switch (type) {
             case EXPAND_PADDLE:
@@ -246,36 +262,56 @@ public class GameManager {
                 activePowerUps.put(type, now + Constants.POWERUP_DURATION);
                 break;
 
-            case SPEED_DOWN_BALL:
-                balls.forEach(Ball::decreaseSpeed);
-                activePowerUps.put(type, now + Constants.POWERUP_DURATION);
-                break;
-
-            case EXTRA_LIFE:
-                scoreManager.addLife();
-                break;
-
             case MULTI_BALL:
-                if (balls.size() < 5) {
-                    Ball baseBall = balls.get(0);
-                    Ball newBall = new Ball(paddle);
-                    newBall.setX(baseBall.getX());
-                    newBall.setY(baseBall.getY());
-                    newBall.setVelocityX(baseBall.getVelocityX() * (random.nextBoolean() ? 1 : -1));
-                    newBall.setVelocityY(baseBall.getVelocityY());
-                    newBall.launch();
-                    balls.add(newBall);
-                }
+                createMultiBallForAll();
+                break;
+
+            case BULLET:
+                activePowerUps.put(type, now + Constants.POWERUP_DURATION);
                 break;
         }
     }
 
+    /**
+     * Spawn two additional balls at the current ball's position, spreading around its direction.
+     * The original ball remains; total becomes three from the same point.
+     */
+    /**
+     * Spawns two additional balls for each existing ball, fanning out by angle.
+     */
+    private void createMultiBallForAll() {
+        if (balls.isEmpty()) return;
+        List<Ball> snapshot = new ArrayList<>(balls);
+        for (Ball ref : snapshot) {
+            double spawnX = ref.getX();
+            double spawnY = ref.getY();
+            double base = (currentLevel != null) ? currentLevel.getBallSpeed() : ref.getBaseSpeed();
+
+            double centerAngle = ref.isStuck() ? Math.toRadians(-90) : Math.atan2(ref.getVelocityY(), ref.getVelocityX());
+            double[] offsets = new double[] { Math.toRadians(20), Math.toRadians(-20) };
+            for (double off : offsets) {
+                Ball nb = new Ball(paddle);
+                nb.setBaseSpeed(base);
+                nb.setX(spawnX);
+                nb.setY(spawnY);
+                nb.setSmoothX(spawnX);
+                nb.setSmoothY(spawnY);
+                nb.setStuck(false);
+                double ang = centerAngle + off;
+                nb.setVelocityX(base * Math.cos(ang));
+                nb.setVelocityY(base * Math.sin(ang));
+                balls.add(nb);
+            }
+        }
+    }
+
+    // Duyệt và vô hiệu hóa Power-up đã hết hạn
     private void updateActivePowerUps() {
-        double now = System.currentTimeMillis(); // ✅ Đổi thành double
-        Iterator<Map.Entry<PowerUpType, Double>> iterator = activePowerUps.entrySet().iterator(); // ✅ Đổi Long thành Double
+        double now = System.currentTimeMillis();
+        Iterator<Map.Entry<PowerUpType, Double>> iterator = activePowerUps.entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry<PowerUpType, Double> entry = iterator.next(); // ✅ Đổi Long thành Double
+            Map.Entry<PowerUpType, Double> entry = iterator.next();
             if (now > entry.getValue()) {
                 deactivatePowerUp(entry.getKey());
                 iterator.remove();
@@ -283,6 +319,59 @@ public class GameManager {
         }
     }
 
+    // Kiểm tra trạng thái hoạt động của Power-up BULLET
+    private boolean isBulletActive() {
+        Double until = activePowerUps.get(PowerUpType.BULLET);
+        return until != null && System.currentTimeMillis() <= until;
+    }
+
+    // Cập nhật bắn đạn theo chu kỳ khi BULLET đang hoạt động và xử lý va chạm với gạch
+    private void updateBullets(double deltaTime) {
+        // Spawn bullets at interval while active
+        if (isBulletActive()) {
+            bulletSpawnAccumulator += deltaTime;
+            while (bulletSpawnAccumulator >= BULLET_SPAWN_INTERVAL) {
+                bulletSpawnAccumulator -= BULLET_SPAWN_INTERVAL;
+                double bx = paddle.getCenterX() - 2; // center 4px bullet
+                double by = paddle.getY() - 10;
+                bullets.add(new Bullet(bx, by));
+            }
+        } else {
+            bulletSpawnAccumulator = 0;
+        }
+
+        // Move bullets and check brick impacts
+        Iterator<Bullet> it = bullets.iterator();
+        while (it.hasNext()) {
+            Bullet bullet = it.next();
+            bullet.update(deltaTime);
+            if (bullet.isOutOfBounds()) {
+                it.remove();
+                continue;
+            }
+
+            Brick hit = null;
+            for (Brick brick : bricks) {
+                if (!brick.isDestroyed() && bullet.intersects(brick)) { hit = brick; break; }
+            }
+            if (hit != null) {
+                if (hit.getType() == BrickType.UNBREAKABLE) {
+                    it.remove();
+                    continue;
+                }
+                boolean destroyed = hit.hit();
+                if (destroyed) {
+                    scoreManager.addScore(hit.getScore());
+                    SoundManager.getInstance().playSound("effect_brick");
+                    SoundManager.getInstance().playSound("effect_score");
+                    bricks.remove(hit);
+                }
+                it.remove();
+            }
+        }
+    }
+
+    // Hoàn tác các thay đổi tạm thời khi Power-up kết thúc
     private void deactivatePowerUp(PowerUpType type) {
         switch (type) {
             case EXPAND_PADDLE:
@@ -291,19 +380,20 @@ public class GameManager {
                 break;
 
             case SPEED_UP_BALL:
-            case SPEED_DOWN_BALL:
                 balls.forEach(Ball::resetSpeed);
                 break;
 
+            case BULLET:
+                // Stop spawning; existing bullets will clear naturally
+                break;
             default:
                 break;
         }
     }
 
+    // Kiểm tra điều kiện hoàn thành level (không còn gạch phá được)
     private boolean isLevelComplete() {
-        if (currentLevel != null) {
-            return currentLevel.isCompleted();
-        }
+        if (currentLevel != null) return currentLevel.isCompleted();
 
         for (Brick brick : bricks) {
             if (!brick.isDestroyed() && brick.getType() != BrickType.UNBREAKABLE) {
@@ -322,6 +412,7 @@ public class GameManager {
         SoundManager sm = SoundManager.getInstance();
         sm.stopAll();
         sm.playSound("music_stage_start");
+        // Lên lịch chuyển nhạc: dừng intro, bật background/ambient sau vài giây
         scheduleStageStartStop();
     }
 
@@ -344,8 +435,6 @@ public class GameManager {
             scheduleStageStartStop();
         } else {
             currentState = GameState.GAME_OVER;
-            System.out.println("Congratulations! You completed all levels!");
-
             SoundManager sm = SoundManager.getInstance();
             sm.stopAll();
             sm.playSound("music_title");
@@ -375,7 +464,6 @@ public class GameManager {
             currentLevel.reset();
             bricks.clear();
             bricks.addAll(currentLevel.getBricks());
-            System.out.println("Reset level: " + currentLevel.getLevelName());
             scoreManager.setLives(currentLevel.getInitialLives());
         } else {
             loadCurrentLevel();
@@ -395,20 +483,17 @@ public class GameManager {
 
     public void selectLevel(int levelNumber) {
         if (levelManager.selectLevel(levelNumber)) {
-            // ⚠️ CRITICAL: Cleanup trước khi load level mới
             cleanup();
 
             currentLevel = levelManager.getCurrentLevel();
             resetLevel();
             currentState = GameState.PLAYING;
-            System.out.println("Selected Level " + currentLevel.getLevelNumber() + ": " + currentLevel.getLevelName());
         } else {
-            System.out.println("Cannot select level " + levelNumber + " (does not exist)");
+            // level not found or locked
         }
     }
 
     public void showLevelSelection() {
-        // ⚠️ CRITICAL: Cleanup TRƯỚC khi đổi state
         cleanup();
 
         currentState = GameState.MENU;
@@ -417,49 +502,30 @@ public class GameManager {
         sm.playSound("music_title");
     }
 
-    /**
-     * ✅ Schedule với khả năng cancel task cũ
-     */
+    // Hẹn giờ chuyển đổi nhạc nền sau khi bắt đầu màn chơi
     private void scheduleStageStartStop() {
-        // ✅ Cancel task cũ trước khi tạo mới
         cancelStageStartTask();
 
-        // ✅ Lưu reference để có thể cancel sau này
         stageStartTask = scheduler.schedule(() -> {
             SoundManager sm = SoundManager.getInstance();
             sm.stopSound("music_stage_start");
             sm.startBackgroundAlternating();
             sm.playSound("ambient_bg");
-
-            // ✅ Clear reference sau khi task hoàn thành
             stageStartTask = null;
         }, 5, TimeUnit.SECONDS);
     }
 
-    /**
-     * ✅ Cancel pending stage start task
-     */
+    // Hủy tác vụ hẹn giờ nếu còn đang chờ
     private void cancelStageStartTask() {
-        if (stageStartTask != null && !stageStartTask.isDone()) {
-            stageStartTask.cancel(false); // false = không interrupt nếu đang chạy
-            System.out.println("🔴 Cancelled pending stage start task");
-        }
+        if (stageStartTask != null && !stageStartTask.isDone()) stageStartTask.cancel(false);
         stageStartTask = null;
     }
 
-    /**
-     * ✅ Cleanup khi thoát game hoặc về menu
-     */
+    // Dọn dẹp tài nguyên khi thoát trận hoặc về menu
     public void cleanup() {
-        System.out.println("🧹 Starting cleanup...");
-
-        // ⚠️ CRITICAL: Cancel scheduled tasks TRƯỚC
         cancelStageStartTask();
-
-        // ⚠️ CRITICAL: Clear collections và null references
         if (balls != null) {
             balls.clear();
-            // balls = null; // Không null vì sẽ reuse
         }
         if (bricks != null) {
             bricks.clear();
@@ -470,20 +536,16 @@ public class GameManager {
         if (activePowerUps != null) {
             activePowerUps.clear();
         }
-
-        // ⚠️ CRITICAL: Stop ALL sounds
+        if (bullets != null) {
+            bullets.clear();
+        }
         try {
             SoundManager.getInstance().stopAll();
         } catch (Exception e) {
             System.err.println("Error stopping sounds: " + e.getMessage());
         }
-
-        System.out.println("🧹 GameManager cleaned up");
     }
 
-    /**
-     * ✅ Shutdown scheduler khi app đóng (gọi từ Application.stop())
-     */
     public void shutdown() {
         cancelStageStartTask();
 
@@ -497,7 +559,6 @@ public class GameManager {
             Thread.currentThread().interrupt();
         }
 
-        System.out.println("🛑 GameManager scheduler shutdown complete");
     }
 
     // Getters
@@ -509,12 +570,16 @@ public class GameManager {
     public ScoreManager getScoreManager() { return scoreManager; }
     public LevelManager getLevelManager() { return levelManager; }
     public Level getCurrentLevel() { return currentLevel; }
+    /**
+     * Sets the current game state, applying safety cleanup and audio handling.
+     */
+    // Thay đổi trạng thái game; đảm bảo dọn dẹp và xử lý âm thanh an toàn
     public void setCurrentState(GameState gameState) {
-        // ⚠️ CRITICAL: Cleanup khi chuyển state
-        if (gameState == GameState.MENU && currentState != GameState.MENU) {
-            cleanup();
+        if (gameState == GameState.MENU && currentState != GameState.MENU) cleanup();
+        if (gameState == GameState.GAME_OVER) {
+            cancelStageStartTask();
+            try { SoundManager.getInstance().stopBackgroundAlternating(); } catch (Exception ignored) {}
         }
-
         this.currentState = gameState;
     }
 }

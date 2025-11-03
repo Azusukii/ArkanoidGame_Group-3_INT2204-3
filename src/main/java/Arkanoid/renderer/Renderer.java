@@ -20,17 +20,17 @@ import java.util.Map;
 
 /**
  * Renders the entire game based on the current GameState.
- * OPTIMIZED: Pre-scaled backgrounds per level, cached resources, NO memory leaks.
+ * Uses cached and pre-scaled resources for performance.
  */
 public class Renderer {
     private final GraphicsContext gc;
 
-    // ✅ Static cache để tránh load lại ảnh mỗi lần tạo Renderer
+    // Static cache to avoid reloading images for each Renderer instance
     private static Map<String, Image> cachedBrickImages = null;
     private static Image cachedDefaultBackground = null;
     private static WritableImage cachedDefaultScaledBg = null;
 
-    // ✅ Cache cho background theo level (key = backgroundPath)
+    // Cache for level backgrounds (key = backgroundPath)
     private static final Map<String, Image> cachedLevelBackgrounds = new HashMap<>();
     private static final Map<String, WritableImage> cachedScaledLevelBgs = new HashMap<>();
 
@@ -38,41 +38,47 @@ public class Renderer {
     private final Image defaultBackgroundImage;
     private final WritableImage defaultScaledBackground;
 
-    // ✅ Current level background (thay đổi theo level)
+    // Current level background reference
     private String currentBgPath = null;
     private WritableImage currentScaledBg = null;
+
+    // Cached heart image for lives UI
+    private static Image cachedHeartImage = null;
 
     public Renderer(GraphicsContext gc) {
         this.gc = gc;
 
-        // ✅ Cache brick images
+        // Cache brick images
         if (cachedBrickImages == null) {
             cachedBrickImages = new HashMap<>();
             cachedBrickImages.put("NORMAL", loadImage("/images/bricks/brick_normal.png"));
             cachedBrickImages.put("HARD", loadImage("/images/bricks/brick_hard.png"));
             cachedBrickImages.put("UNBREAKABLE", loadImage("/images/bricks/brick_unbreakable.png"));
             cachedBrickImages.put("BROKEN", loadImage("/images/bricks/brick_broken.png"));
-            System.out.println("✅ Brick images cached");
         }
         this.brickImages = cachedBrickImages;
 
-        // ✅ Load default background chỉ 1 lần
+        // Load default background only once
         if (cachedDefaultBackground == null) {
             cachedDefaultBackground = loadImage("/images/level/space.png");
             if (cachedDefaultBackground != null) {
                 cachedDefaultScaledBg = prescaleBackground(cachedDefaultBackground);
-                System.out.println("✅ Default background cached and pre-scaled");
             }
         }
         this.defaultBackgroundImage = cachedDefaultBackground;
         this.defaultScaledBackground = cachedDefaultScaledBg;
 
-        // ✅ Ban đầu dùng default background
+        // Start with default background
         this.currentScaledBg = cachedDefaultScaledBg;
+
+        // Load heart image once for UI
+        if (cachedHeartImage == null) {
+            cachedHeartImage = loadImage("/images/powerup/heart.png");
+        }
     }
 
     /**
-     * Pre-scale background image một lần duy nhất
+     * Pre-scales the background image to window size for faster draws.
      */
     private WritableImage prescaleBackground(Image original) {
         if (original == null) return null;
@@ -81,10 +87,8 @@ public class Renderer {
             double targetWidth = Constants.WINDOW_WIDTH;
             double targetHeight = Constants.WINDOW_HEIGHT;
 
-            // Kiểm tra xem ảnh đã đúng kích thước chưa
             if (Math.abs(original.getWidth() - targetWidth) < 1 &&
                     Math.abs(original.getHeight() - targetHeight) < 1) {
-                System.out.println("✅ Background đã đúng kích thước, không cần scale");
                 return null; // Dùng ảnh gốc luôn
             }
 
@@ -97,11 +101,9 @@ public class Renderer {
             params.setFill(Color.TRANSPARENT);
             tempCanvas.snapshot(params, scaled);
 
-            System.out.println("✅ Background pre-scaled: " + (int)targetWidth + "x" + (int)targetHeight);
             return scaled;
 
         } catch (Exception e) {
-            System.err.println("⚠️ Không thể pre-scale background");
             e.printStackTrace();
             return null;
         }
@@ -111,7 +113,6 @@ public class Renderer {
         try {
             InputStream stream = getClass().getResourceAsStream(path);
             if (stream == null) {
-                System.err.println("⚠️ Không tìm thấy ảnh: " + path);
                 return null;
             }
 
@@ -119,22 +120,20 @@ public class Renderer {
             Image img = new Image(stream, 0, 0, true, false);
             stream.close(); // ✅ Đóng stream sau khi load
 
-            System.out.println("✅ Đã tải ảnh: " + path);
             return img;
         } catch (Exception e) {
-            System.err.println("❌ Lỗi khi tải ảnh: " + path);
             e.printStackTrace();
             return null;
         }
     }
 
     /**
-     * ⚠️ CRITICAL: CHỈ load background khi thay đổi, KHÔNG mỗi frame!
+     * Renders a frame based on the game state and ensures backgrounds are cached.
      */
     public void render(GameManager gameManager) {
         GameState state = gameManager.getCurrentState();
 
-        // ⚠️ CRITICAL: Xác định background cần dùng
+        // Xác định background cần sử dụng theo level/state
         String desiredBgPath = null;
         Level currentLevel = gameManager.getCurrentLevel();
 
@@ -142,59 +141,52 @@ public class Renderer {
             desiredBgPath = currentLevel.getBackgroundImage();
         }
 
-        // ⚠️ CRITICAL: CHỈ load nếu background thay đổi
         if (!isSameBackground(desiredBgPath, currentBgPath)) {
             loadLevelBackground(desiredBgPath);
         }
 
+        // Vẽ nền đã cache để tối ưu hiệu năng
         drawBackground();
 
         switch (state) {
-            case MENU -> renderMenu();
+            case MENU -> { /* keep only background */ }
             case PLAYING, PAUSED -> {
+                // Vẽ gameplay: gạch, paddle, bóng, power-up, đạn, UI
                 renderGame(gameManager);
                 if (state == GameState.PAUSED) renderPauseOverlay();
             }
             case GAME_OVER -> {
+                // Vẫn vẽ gameplay làm nền, sau đó phủ lớp Game Over
                 renderGame(gameManager);
                 renderGameOver(gameManager.getScoreManager());
             }
             case LEVEL_COMPLETE -> {
+                // Vẽ gameplay làm nền, sau đó phủ lớp Level Complete
                 renderGame(gameManager);
                 renderLevelComplete(gameManager);
             }
         }
     }
 
-    /**
-     * ⚠️ So sánh background path an toàn
-     */
     private boolean isSameBackground(String path1, String path2) {
         if (path1 == null && path2 == null) return true;
         if (path1 == null || path2 == null) return false;
         return path1.equals(path2);
     }
 
-    /**
-     * ⚠️ CRITICAL: Load background CHỈ khi cần thiết
-     */
     private void loadLevelBackground(String backgroundPath) {
-        // Null hoặc empty = dùng default
         if (backgroundPath == null || backgroundPath.trim().isEmpty()) {
             currentBgPath = null;
             currentScaledBg = defaultScaledBackground;
             return;
         }
 
-        // ⚠️ CRITICAL: Check cache TRƯỚC khi load
         if (cachedScaledLevelBgs.containsKey(backgroundPath)) {
             currentBgPath = backgroundPath;
             currentScaledBg = cachedScaledLevelBgs.get(backgroundPath);
-            System.out.println("✅ Using cached background: " + backgroundPath);
             return;
         }
 
-        // Load mới và cache (CHỈ khi chưa có trong cache)
         try {
             Image originalBg = cachedLevelBackgrounds.get(backgroundPath);
             if (originalBg == null) {
@@ -210,29 +202,23 @@ public class Renderer {
 
                 currentBgPath = backgroundPath;
                 currentScaledBg = scaledBg;
-                System.out.println("✅ Loaded and cached new background: " + backgroundPath);
             } else {
-                System.err.println("⚠️ Failed to load background, using default");
                 currentBgPath = null;
                 currentScaledBg = defaultScaledBackground;
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Error loading level background: " + backgroundPath);
             e.printStackTrace();
             currentBgPath = null;
             currentScaledBg = defaultScaledBackground;
         }
     }
 
-    /**
-     * Vẽ background từ cache (cực nhanh, không tốn bộ nhớ)
-     */
+    /** Draws background from cache when possible. */
     private void drawBackground() {
         if (currentScaledBg != null) {
             gc.drawImage(currentScaledBg, 0, 0);
         } else if (currentBgPath != null) {
-            // Fallback: vẽ trực tiếp nếu không có scaled version
             Image original = cachedLevelBackgrounds.get(currentBgPath);
             if (original != null) {
                 gc.drawImage(original, 0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
@@ -288,6 +274,25 @@ public class Renderer {
             ball.render(gc);
         }
 
+        // Render bullets if present via reflection of a getter (not exposed): draw from manager state indirectly
+        try {
+            java.lang.reflect.Method m = gameManager.getClass().getDeclaredMethod("getPowerUps");
+        } catch (Exception ignored) {}
+
+        // Best-effort: bullets rendered by checking a known field via reflection
+        try {
+            java.lang.reflect.Field f = gameManager.getClass().getDeclaredField("bullets");
+            f.setAccessible(true);
+            Object list = f.get(gameManager);
+            if (list instanceof java.util.List<?> l) {
+                for (Object o : l) {
+                    if (o instanceof Arkanoid.model.Bullet b) {
+                        b.render(gc);
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
         renderUI(gameManager);
     }
 
@@ -298,8 +303,19 @@ public class Renderer {
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", Constants.UI_FONT_SIZE));
 
+        // Draw framed score box at top-left
+        double boxX = 10;
+        double boxY = 8;
+        double boxW = 180;
+        double boxH = 34;
+        gc.setFill(Color.rgb(0, 0, 0, 0.4));
+        gc.fillRoundRect(boxX, boxY, boxW, boxH, 8, 8);
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(2);
+        gc.strokeRoundRect(boxX, boxY, boxW, boxH, 8, 8);
         gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("Score: " + scoreManager.getScore(), 10, 25);
+        gc.setFill(Color.WHITE); // ensure text is visible after dark box fill
+        gc.fillText("Score: " + scoreManager.getScore(), boxX + 10, boxY + 23);
 
         gc.setTextAlign(TextAlignment.CENTER);
         if (currentLevel != null) {
@@ -309,9 +325,25 @@ public class Renderer {
                     Constants.WINDOW_WIDTH / 2.0, 25);
         }
 
-        gc.setTextAlign(TextAlignment.RIGHT);
-        gc.fillText("Lives: " + scoreManager.getLives(),
-                Constants.WINDOW_WIDTH - 10, 25);
+        // Draw hearts for lives (3 icons), top-right
+        int maxHearts = 3;
+        int lives = Math.max(0, Math.min(maxHearts, scoreManager.getLives()));
+        double heartSize = 22;
+        double spacing = 8;
+        double startX = Constants.WINDOW_WIDTH - 10 - (maxHearts * heartSize + (maxHearts - 1) * spacing);
+        double y = 8;
+        for (int i = 0; i < maxHearts; i++) {
+            double x = startX + i * (heartSize + spacing);
+            double alpha = (i < lives) ? 1.0 : 0.25;
+            if (cachedHeartImage != null) {
+                gc.setGlobalAlpha(alpha);
+                gc.drawImage(cachedHeartImage, x, y, heartSize, heartSize);
+                gc.setGlobalAlpha(1.0);
+            } else {
+                gc.setFill(Color.color(1, 0.2, 0.3, alpha));
+                gc.fillOval(x, y, heartSize, heartSize);
+            }
+        }
     }
 
     private void renderMenu() {
@@ -386,15 +418,12 @@ public class Renderer {
         gc.fillText("Score: " + scoreManager.getScore(), Constants.WINDOW_WIDTH / 2.0, 330);
     }
 
-    /**
-     * ✅ Phương thức dọn dẹp cache khi cần (gọi khi thoát game)
-     */
+    /** Clears static caches (call on application shutdown if needed). */
     public static void clearCache() {
         cachedBrickImages = null;
         cachedDefaultBackground = null;
         cachedDefaultScaledBg = null;
         cachedLevelBackgrounds.clear();
         cachedScaledLevelBgs.clear();
-        System.out.println("🧹 Renderer cache cleared");
     }
 }
