@@ -19,15 +19,19 @@ JUnit Test for core components
 Screenshots:
 
 Open game menu
+<img width="992" height="785" alt="image" src="https://github.com/user-attachments/assets/18c95342-ef11-4d50-afec-9617c7012f64" />
 
-<img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/3fedcf08-67b0-4c4a-9bb4-9e148182ba3a" />
 Level selection menu
 
 <img width="1002" height="789" alt="image" src="https://github.com/user-attachments/assets/f0be731c-4a28-4f3e-a003-54a2975d5ebe" />
 
 Sound manager menu
 
-<img width="452" height="414" alt="image" src="https://github.com/user-attachments/assets/b8b61a99-233a-40f7-b871-8ff92c37a2fc" />
+<img width="994" height="788" alt="image" src="https://github.com/user-attachments/assets/adda637a-22d8-445c-8904-8e3ba3688dc6" />
+
+Highscore manager menu
+
+<img width="993" height="785" alt="image" src="https://github.com/user-attachments/assets/d5ebe7b9-ccef-4cf8-8625-b6274f0e1a1c" />
 
 Level 1:
 
